@@ -8,6 +8,7 @@ import { dashboardSummaryRouter } from "./routes/dashboard-summary-routes.js";
 import { financialProfileRouter } from "./routes/financial-profile-routes.js";
 import { goalRouter } from "./routes/goal-routes.js";
 import { investmentRouter } from "./routes/investment-routes.js";
+import { marketDataCronRouter, marketDataRouter } from "./routes/market-data-routes.js";
 import { recurringExpenseRouter } from "./routes/recurring-expense-routes.js";
 import { simulatorRouter } from "./routes/simulator-routes.js";
 import { transactionRouter } from "./routes/transaction-routes.js";
@@ -40,6 +41,8 @@ export function createApp() {
   app.use("/api/goals", goalRouter);
   app.use("/api/simulator", simulatorRouter);
   app.use("/api/investments", investmentRouter);
+  app.use("/api/market-data", marketDataRouter);
+  app.use("/api/cron", marketDataCronRouter);
 
   app.use(
     (

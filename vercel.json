@@ -9,5 +9,11 @@
       "source": "/api/(.*)",
       "destination": "/api/index"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/update-market-data",
+      "schedule": "0 9 * * *"
+    }
   ]
 }
