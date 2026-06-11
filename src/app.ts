@@ -4,6 +4,7 @@ import helmet from "helmet";
 import { env } from "./env.js";
 import { creditCardPurchaseRouter } from "./routes/credit-card-purchase-routes.js";
 import { creditCardRouter } from "./routes/credit-card-routes.js";
+import { dashboardSummaryRouter } from "./routes/dashboard-summary-routes.js";
 import { financialProfileRouter } from "./routes/financial-profile-routes.js";
 import { recurringExpenseRouter } from "./routes/recurring-expense-routes.js";
 
@@ -30,6 +31,7 @@ export function createApp() {
   app.use("/api/recurring-expenses", recurringExpenseRouter);
   app.use("/api/credit-cards", creditCardRouter);
   app.use("/api/credit-card-purchases", creditCardPurchaseRouter);
+  app.use("/api/dashboard/summary", dashboardSummaryRouter);
 
   app.use(
     (
