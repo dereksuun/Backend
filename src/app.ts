@@ -19,7 +19,7 @@ export function createApp() {
   app.get("/api/health", (_request, response) => {
     response.json({
       status: "ok",
-      service: "bufunfometro-backend"
+      service: "derycash-backend"
     });
   });
 

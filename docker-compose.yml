@@ -1,21 +1,21 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: bufunfometro-postgres
+    container_name: derycash-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: bufunfometro
-      POSTGRES_USER: bufunfometro
-      POSTGRES_PASSWORD: bufunfometro
+      POSTGRES_DB: derycash
+      POSTGRES_USER: derycash
+      POSTGRES_PASSWORD: derycash
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - derycash_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bufunfometro -d bufunfometro"]
+      test: ["CMD-SHELL", "pg_isready -U derycash -d derycash"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres_data:
+  derycash_postgres_data:
