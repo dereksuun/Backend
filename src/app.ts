@@ -7,6 +7,7 @@ import { creditCardRouter } from "./routes/credit-card-routes.js";
 import { dashboardSummaryRouter } from "./routes/dashboard-summary-routes.js";
 import { financialProfileRouter } from "./routes/financial-profile-routes.js";
 import { goalRouter } from "./routes/goal-routes.js";
+import { incomeRouter } from "./routes/income-routes.js";
 import { investmentRouter } from "./routes/investment-routes.js";
 import { marketDataCronRouter, marketDataRouter } from "./routes/market-data-routes.js";
 import { recurringExpenseRouter } from "./routes/recurring-expense-routes.js";
@@ -43,6 +44,7 @@ export function createApp() {
   app.use("/api/investments", investmentRouter);
   app.use("/api/market-data", marketDataRouter);
   app.use("/api/cron", marketDataCronRouter);
+  app.use("/api/incomes", incomeRouter);
 
   app.use(
     (

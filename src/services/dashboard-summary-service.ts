@@ -67,7 +67,7 @@ export async function getDashboardSummary(userId: string) {
     };
   }
 
-  const [recurringExpenses, currentInstallments, transactions] = await Promise.all([
+  const [recurringExpenses, currentInstallments, transactions, incomes] = await Promise.all([
     prisma.recurringExpense.findMany({
       where: { userId },
       include: {
@@ -91,6 +91,15 @@ export async function getDashboardSummary(userId: string) {
           lt: nextUtcMonth(referenceMonth)
         }
       }
+    }),
+    prisma.income.findMany({
+      where: {
+        userId,
+        receivedAt: {
+          gte: referenceMonth,
+          lt: nextUtcMonth(referenceMonth)
+        }
+      }
     })
   ]);
 
@@ -98,23 +107,26 @@ export async function getDashboardSummary(userId: string) {
   const pendingExpensesCents = pendingExpenses.reduce((total, expense) => total + expense.expectedAmountCents, 0);
   const currentInvoiceCents = currentInstallments.reduce((total, installment) => total + installment.amountCents, 0);
   const monthlyTransactionsCents = transactions.reduce((total, transaction) => total + transaction.amountCents, 0);
+  const extraIncomeCents = incomes.reduce((total, income) => total + income.amountCents, 0);
+  const expectedIncomeCents = profile.monthlyIncomeCents + extraIncomeCents;
   const protectedGoalCents = profile.monthlySavingGoalCents + profile.safetyMarginCents;
   const realFreeMoneyCents =
-    profile.monthlyIncomeCents - pendingExpensesCents - currentInvoiceCents - monthlyTransactionsCents - protectedGoalCents;
+    expectedIncomeCents - pendingExpensesCents - currentInvoiceCents - monthlyTransactionsCents - protectedGoalCents;
   const receivedIncomeCents = calculateReceivedIncomeCents(
     profile.monthlyIncomeCents,
     profile.mainPaymentPercent,
     profile.advancePaymentPercent,
     profile.mainPaymentDay,
     profile.advancePaymentDay
-  );
+  ) + extraIncomeCents;
 
   return {
     profile,
     summary: {
       realFreeMoneyCents,
-      expectedIncomeCents: profile.monthlyIncomeCents,
+      expectedIncomeCents,
       receivedIncomeCents,
+      extraIncomeCents,
       pendingExpensesCount: pendingExpenses.length,
       pendingExpensesCents,
       currentInvoiceCents,
