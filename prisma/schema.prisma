@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ExpenseStatus {
+  PENDING
+  PAID
+  OVERDUE
+  IGNORED
+  CANCELED
+}
+
+enum CreditCardRisk {
+  SAFE
+  ATTENTION
+  DANGEROUS
+  CHAOTIC
+}
+
+model User {
+  id               String            @id @default(cuid())
+  name             String?
+  email            String?           @unique
+  image            String?
+  financialProfile FinancialProfile?
+  incomes          Income[]
+  expenses         RecurringExpense[]
+  creditCards      CreditCard[]
+  goals            Goal[]
+  transactions     Transaction[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model FinancialProfile {
+  id                         String   @id @default(cuid())
+  userId                     String   @unique
+  monthlyIncomeCents         Int
+  mainPaymentDay             Int      @default(5)
+  advancePaymentDay          Int      @default(20)
+  mainPaymentPercent         Int      @default(60)
+  advancePaymentPercent      Int      @default(40)
+  includeMealVoucher         Boolean  @default(false)
+  includeTransportVoucher    Boolean  @default(false)
+  monthlySavingGoalCents     Int      @default(0)
+  safetyMarginCents          Int      @default(0)
+  cycleStartDay              Int      @default(1)
+  onboardingCompletedAt      DateTime?
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
+
+model Income {
+  id          String   @id @default(cuid())
+  userId      String
+  description String
+  amountCents Int
+  receivedAt  DateTime
+  type        String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, receivedAt])
+}
+
+model RecurringExpense {
+  id                  String           @id @default(cuid())
+  userId              String
+  name                String
+  expectedAmountCents Int
+  dueDay              Int
+  category            String
+  type                String
+  isEssential         Boolean          @default(true)
+  isVariable          Boolean          @default(false)
+  status              ExpenseStatus    @default(PENDING)
+  startsAt            DateTime?
+  endsAt              DateTime?
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monthlyExpenses     MonthlyExpense[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([userId, dueDay])
+}
+
+model MonthlyExpense {
+  id                  String           @id @default(cuid())
+  recurringExpenseId  String
+  userId              String
+  referenceMonth      DateTime
+  expectedAmountCents Int
+  actualAmountCents   Int?
+  paidAt              DateTime?
+  status              ExpenseStatus    @default(PENDING)
+  recurringExpense    RecurringExpense @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([userId, referenceMonth])
+}
+
+model CreditCard {
+  id              String               @id @default(cuid())
+  userId          String
+  name            String
+  institution     String?
+  limitCents      Int
+  closingDay      Int
+  dueDay          Int
+  color           String?
+  active          Boolean              @default(true)
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchases       CreditCardPurchase[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([userId])
+}
+
+model CreditCardPurchase {
+  id                String                  @id @default(cuid())
+  userId            String
+  creditCardId      String
+  description       String
+  totalAmountCents  Int
+  purchasedAt       DateTime
+  category          String
+  installmentsCount Int                     @default(1)
+  notes             String?
+  creditCard        CreditCard              @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  installments      CreditCardInstallment[]
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@index([userId, purchasedAt])
+}
+
+model CreditCardInstallment {
+  id           String             @id @default(cuid())
+  purchaseId   String
+  userId       String
+  number       Int
+  amountCents  Int
+  invoiceMonth DateTime
+  paidAt       DateTime?
+  purchase     CreditCardPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([userId, invoiceMonth])
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  description String
+  amountCents Int
+  occurredAt  DateTime
+  category    String
+  paymentType String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, occurredAt])
+}
+
+model Goal {
+  id                String             @id @default(cuid())
+  userId            String
+  name              String
+  targetAmountCents Int
+  currentCents      Int                @default(0)
+  deadline          DateTime?
+  priority          Int                @default(0)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions     GoalContribution[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([userId])
+}
+
+model GoalContribution {
+  id          String   @id @default(cuid())
+  goalId      String
+  userId      String
+  amountCents Int
+  contributedAt DateTime
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, contributedAt])
+}
+
+model MarketIndicator {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  value       Decimal
+  referenceAt DateTime
+  source      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+relatorios
+.env
+.env*.local
+*.log
+.git
+.vercel
