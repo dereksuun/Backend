@@ -5,6 +5,7 @@ import { env } from "./env.js";
 import { creditCardPurchaseRouter } from "./routes/credit-card-purchase-routes.js";
 import { creditCardRouter } from "./routes/credit-card-routes.js";
 import { dashboardSummaryRouter } from "./routes/dashboard-summary-routes.js";
+import { dashboardTimelineRouter } from "./routes/dashboard-timeline-routes.js";
 import { financialProfileRouter } from "./routes/financial-profile-routes.js";
 import { goalRouter } from "./routes/goal-routes.js";
 import { incomeRouter } from "./routes/income-routes.js";
@@ -38,6 +39,7 @@ export function createApp() {
   app.use("/api/credit-cards", creditCardRouter);
   app.use("/api/credit-card-purchases", creditCardPurchaseRouter);
   app.use("/api/dashboard/summary", dashboardSummaryRouter);
+  app.use("/api/dashboard/timeline", dashboardTimelineRouter);
   app.use("/api/transactions", transactionRouter);
   app.use("/api/goals", goalRouter);
   app.use("/api/simulator", simulatorRouter);
