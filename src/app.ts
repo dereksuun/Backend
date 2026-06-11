@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import { env } from "./env.js";
 import { financialProfileRouter } from "./routes/financial-profile-routes.js";
+import { recurringExpenseRouter } from "./routes/recurring-expense-routes.js";
 
 export function createApp() {
   const app = express();
@@ -24,6 +25,7 @@ export function createApp() {
   });
 
   app.use("/api/financial-profile", financialProfileRouter);
+  app.use("/api/recurring-expenses", recurringExpenseRouter);
 
   app.use(
     (
