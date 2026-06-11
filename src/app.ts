@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import { env } from "./env.js";
+import { creditCardRouter } from "./routes/credit-card-routes.js";
 import { financialProfileRouter } from "./routes/financial-profile-routes.js";
 import { recurringExpenseRouter } from "./routes/recurring-expense-routes.js";
 
@@ -26,6 +27,7 @@ export function createApp() {
 
   app.use("/api/financial-profile", financialProfileRouter);
   app.use("/api/recurring-expenses", recurringExpenseRouter);
+  app.use("/api/credit-cards", creditCardRouter);
 
   app.use(
     (
