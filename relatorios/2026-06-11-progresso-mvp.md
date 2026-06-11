@@ -17,6 +17,8 @@ Foi avancado o plano do Bufunfometro/Derycash em ciclos pequenos de branch, comm
 - Fase 6: API de metas e aportes.
 - Fase 7: API do simulador "Posso Gastar?".
 - Fase 8: API de simulacao educativa de investimentos.
+- Fase 8: API de indicadores com cache em `MarketIndicator`.
+- Fase 8: cron protegido para atualizar Selic, IPCA e CDI via Banco Central SGS.
 - Fase 10: README atualizado.
 - Testes unitarios iniciais para regras puras.
 
@@ -31,11 +33,12 @@ Foi avancado o plano do Bufunfometro/Derycash em ciclos pequenos de branch, comm
 
 - O backend segue separado do frontend, conforme a decisao inicial do projeto local.
 - A autenticacao entre frontend e backend ainda usa headers temporarios `x-user-id`, `x-user-email` e `x-user-name`.
-- O simulador de investimentos e educativo e nao depende de API externa nesta primeira versao.
+- O simulador de investimentos e educativo.
+- Indicadores externos usam a API publica SGS do Banco Central e cache local no banco.
 
 ## Pendencias principais
 
 - Integrar autenticacao real backend/frontend.
-- Criar cron e integracao real de indicadores de mercado.
+- Expandir indicadores para Tesouro e outras fontes publicas.
 - Ampliar testes de services com banco isolado ou mocks.
 - Avaliar migracao futura para Route Handlers do Next.js, se a arquitetura for unificada.
