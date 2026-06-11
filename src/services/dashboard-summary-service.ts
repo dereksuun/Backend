@@ -5,6 +5,10 @@ function startOfUtcMonth(date = new Date()) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }
 
+function nextUtcMonth(date = new Date()) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
+}
+
 function calculateReceivedIncomeCents(
   monthlyIncomeCents: number,
   mainPaymentPercent: number,
@@ -63,7 +67,7 @@ export async function getDashboardSummary(userId: string) {
     };
   }
 
-  const [recurringExpenses, currentInstallments] = await Promise.all([
+  const [recurringExpenses, currentInstallments, transactions] = await Promise.all([
     prisma.recurringExpense.findMany({
       where: { userId },
       include: {
@@ -78,15 +82,25 @@ export async function getDashboardSummary(userId: string) {
         invoiceMonth: referenceMonth,
         paidAt: null
       }
+    }),
+    prisma.transaction.findMany({
+      where: {
+        userId,
+        occurredAt: {
+          gte: referenceMonth,
+          lt: nextUtcMonth(referenceMonth)
+        }
+      }
     })
   ]);
 
   const pendingExpenses = recurringExpenses.filter((expense) => expense.monthlyExpenses[0]?.status !== "PAID");
   const pendingExpensesCents = pendingExpenses.reduce((total, expense) => total + expense.expectedAmountCents, 0);
   const currentInvoiceCents = currentInstallments.reduce((total, installment) => total + installment.amountCents, 0);
+  const monthlyTransactionsCents = transactions.reduce((total, transaction) => total + transaction.amountCents, 0);
   const protectedGoalCents = profile.monthlySavingGoalCents + profile.safetyMarginCents;
   const realFreeMoneyCents =
-    profile.monthlyIncomeCents - pendingExpensesCents - currentInvoiceCents - protectedGoalCents;
+    profile.monthlyIncomeCents - pendingExpensesCents - currentInvoiceCents - monthlyTransactionsCents - protectedGoalCents;
   const receivedIncomeCents = calculateReceivedIncomeCents(
     profile.monthlyIncomeCents,
     profile.mainPaymentPercent,
@@ -104,6 +118,7 @@ export async function getDashboardSummary(userId: string) {
       pendingExpensesCount: pendingExpenses.length,
       pendingExpensesCents,
       currentInvoiceCents,
+      monthlyTransactionsCents,
       futureInstallmentsCount: currentInstallments.length,
       protectedGoalCents,
       nextPayment: getNextPayment(profile),
