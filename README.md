@@ -1,6 +1,6 @@
-# Bufunfometro Backend
+# Derycash Backend
 
-API e regras de negocio do Bufunfometro.
+API e regras de negocio do Derycash.
 
 ## Direcao inicial
 
