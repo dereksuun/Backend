@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireUserContext } from "../http/user-context.js";
 import { analyzeInvestment } from "../ai/services/investment-intelligence-service.js";
 import { calculateInvestmentIndexes } from "../investments/calculators/investment-indexes.js";
-import { previewInvestmentImport } from "../investments/importers/investment-import-service.js";
+import { previewInvestmentImport, standardInvestmentCsvTemplate } from "../investments/importers/investment-import-service.js";
 import {
   confirmInvestmentImport,
   createManualInvestmentMovement,
@@ -15,6 +15,12 @@ import { manualInvestmentMovementSchema } from "../validations/investment-moveme
 import { investmentSimulationSchema } from "../validations/investment-simulation.js";
 
 export const investmentRouter = Router();
+
+investmentRouter.get("/imports/template.csv", (_request, response) => {
+  response.header("content-type", "text/csv; charset=utf-8");
+  response.header("content-disposition", 'attachment; filename="derycash-investimentos-template.csv"');
+  response.send(standardInvestmentCsvTemplate);
+});
 
 investmentRouter.use(requireUserContext);
 

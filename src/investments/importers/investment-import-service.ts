@@ -16,6 +16,11 @@ const requiredStandardColumns = [
   "observacao"
 ];
 
+export const standardInvestmentCsvTemplate = [
+  requiredStandardColumns.join(","),
+  "2026-06-11,XP,compra,acao,PETR4,Petrobras PN,10,38.50,385.00,1.20,Compra manual/importada"
+].join("\n");
+
 function splitCsvLine(line: string) {
   const cells: string[] = [];
   let current = "";

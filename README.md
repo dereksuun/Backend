@@ -55,8 +55,10 @@ POST /api/simulator/can-i-buy
 POST /api/investments/simulate
 GET  /api/investments/portfolio
 POST /api/investments/analyze-asset
+GET  /api/investments/imports/template.csv
 POST /api/investments/imports/preview
 POST /api/investments/imports/confirm
+POST /api/investments/movements
 ```
 
 ## Ambiente
