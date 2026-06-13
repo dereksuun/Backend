@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
 import { previewInvestmentImport } from "../importers/investment-import-service.js";
 import type { InvestmentImportConfirmInput } from "../../validations/investment-import.js";
+import type { ManualInvestmentMovementInput } from "../../validations/investment-movement.js";
 
 function sourceHash(userId: string, content: string) {
   return createHash("sha256").update(`${userId}:${content}`).digest("hex");
@@ -275,4 +276,74 @@ export async function confirmInvestmentImport(userId: string, input: InvestmentI
     movementsCreated: result.movementsCreated,
     message: "Importacao confirmada e carteira atualizada."
   };
+}
+
+export async function createManualInvestmentMovement(userId: string, input: ManualInvestmentMovementInput) {
+  return prisma.$transaction(async (client) => {
+    const platform = await client.investmentPlatform.upsert({
+      where: {
+        userId_institution_name: {
+          userId,
+          institution: input.institution,
+          name: input.platformName
+        }
+      },
+      create: {
+        userId,
+        institution: input.institution,
+        name: input.platformName
+      },
+      update: {
+        active: true
+      }
+    });
+
+    const asset = await client.investmentAsset.upsert({
+      where: {
+        userId_ticker: {
+          userId,
+          ticker: input.ticker
+        }
+      },
+      create: {
+        userId,
+        ticker: input.ticker,
+        name: input.assetName || input.ticker,
+        assetType: input.assetType
+      },
+      update: {
+        name: input.assetName || input.ticker,
+        assetType: input.assetType
+      }
+    });
+
+    const quantity = typeof input.quantity === "number" ? new Prisma.Decimal(input.quantity) : new Prisma.Decimal(0);
+    const movement = await client.investmentMovement.create({
+      data: {
+        userId,
+        platformId: platform.id,
+        assetId: asset.id,
+        movementType: input.movementType,
+        assetType: input.assetType,
+        occurredAt: input.occurredAt,
+        quantity,
+        unitPriceCents: input.unitPriceCents ?? null,
+        totalCents: input.totalCents,
+        feesCents: input.feesCents,
+        notes: input.notes
+      }
+    });
+
+    await upsertPosition({
+      client,
+      userId,
+      assetId: asset.id,
+      platformId: platform.id,
+      movementType: input.movementType,
+      quantity,
+      totalCents: input.totalCents
+    });
+
+    return movement;
+  });
 }

@@ -3,10 +3,15 @@ import { requireUserContext } from "../http/user-context.js";
 import { analyzeInvestment } from "../ai/services/investment-intelligence-service.js";
 import { calculateInvestmentIndexes } from "../investments/calculators/investment-indexes.js";
 import { previewInvestmentImport } from "../investments/importers/investment-import-service.js";
-import { confirmInvestmentImport, listInvestmentPortfolio } from "../investments/services/investment-portfolio-service.js";
+import {
+  confirmInvestmentImport,
+  createManualInvestmentMovement,
+  listInvestmentPortfolio
+} from "../investments/services/investment-portfolio-service.js";
 import { simulateInvestment } from "../services/investment-simulation-service.js";
 import { investmentAnalysisRequestSchema } from "../validations/investment-analysis.js";
 import { investmentImportConfirmSchema, investmentImportPreviewSchema } from "../validations/investment-import.js";
+import { manualInvestmentMovementSchema } from "../validations/investment-movement.js";
 import { investmentSimulationSchema } from "../validations/investment-simulation.js";
 
 export const investmentRouter = Router();
@@ -103,6 +108,25 @@ investmentRouter.post("/imports/confirm", async (request, response, next) => {
 
     const result = await confirmInvestmentImport(request.userContext!.id, parsed.data);
     response.status(result.confirmed ? 201 : 409).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+investmentRouter.post("/movements", async (request, response, next) => {
+  try {
+    const parsed = manualInvestmentMovementSchema.safeParse(request.body);
+
+    if (!parsed.success) {
+      response.status(400).json({
+        error: "invalid_investment_movement",
+        issues: parsed.error.flatten()
+      });
+      return;
+    }
+
+    const movement = await createManualInvestmentMovement(request.userContext!.id, parsed.data);
+    response.status(201).json({ movement });
   } catch (error) {
     next(error);
   }
