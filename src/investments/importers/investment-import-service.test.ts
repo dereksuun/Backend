@@ -31,4 +31,25 @@ describe("previewInvestmentImport", () => {
     expect(preview.status).toBe("NEEDS_MANUAL_MAPPING");
     expect(preview.summary.reviewItems).toBe(1);
   });
+
+  it("accepts semicolon CSVs with common broker column aliases", () => {
+    const preview = previewInvestmentImport({
+      institution: "XP",
+      fileType: "CSV",
+      saveOriginalFile: false,
+      content: [
+        "Data da Operacao;Corretora;Operacao;Tipo Ativo;Codigo Ativo;Nome do Ativo;Qtd;Preco Unitario;Valor Bruto;Taxas;Descricao",
+        "2026-06-11;XP;compra;acao;PETR4;Petrobras PN;10;38,50;385,00;1,20;CSV da corretora"
+      ].join("\n")
+    });
+
+    expect(preview.status).toBe("READY_FOR_CONFIRMATION");
+    expect(preview.summary.operations).toBe(1);
+    expect(preview.rows[0]).toMatchObject({
+      ticker: "PETR4",
+      totalCents: 38500,
+      unitPriceCents: 3850,
+      feesCents: 120
+    });
+  });
 });
