@@ -66,6 +66,7 @@ model User {
   investmentPositions InvestmentPosition[]
   investmentMovements InvestmentMovement[]
   investmentImports   InvestmentImportBatch[]
+  investmentAnalysisCaches InvestmentAnalysisCache[]
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
 }
@@ -343,4 +344,21 @@ model InvestmentPosition {
 
   @@unique([userId, assetId, platformId])
   @@index([userId])
+}
+
+model InvestmentAnalysisCache {
+  id        String   @id @default(cuid())
+  userId    String
+  ticker    String
+  inputHash String
+  source    String
+  indexes   Json
+  analysis  Json
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, ticker, inputHash])
+  @@index([userId, ticker, expiresAt])
 }

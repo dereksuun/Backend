@@ -21,7 +21,7 @@ export const standardInvestmentCsvTemplate = [
   "2026-06-11,XP,compra,acao,PETR4,Petrobras PN,10,38.50,385.00,1.20,Compra manual/importada"
 ].join("\n");
 
-function splitCsvLine(line: string) {
+function splitCsvLine(line: string, delimiter = ",") {
   const cells: string[] = [];
   let current = "";
   let insideQuotes = false;
@@ -32,7 +32,7 @@ function splitCsvLine(line: string) {
       continue;
     }
 
-    if (char === "," && !insideQuotes) {
+    if (char === delimiter && !insideQuotes) {
       cells.push(current.trim());
       current = "";
       continue;
@@ -43,6 +43,70 @@ function splitCsvLine(line: string) {
 
   cells.push(current.trim());
   return cells;
+}
+
+const headerAliases: Record<string, string> = {
+  data: "data",
+  "data operacao": "data",
+  "data da operacao": "data",
+  "data negociacao": "data",
+  "data de negociacao": "data",
+  instituicao: "instituicao",
+  corretora: "instituicao",
+  banco: "instituicao",
+  tipo: "tipo_movimentacao",
+  movimento: "tipo_movimentacao",
+  movimentacao: "tipo_movimentacao",
+  "tipo movimentacao": "tipo_movimentacao",
+  operacao: "tipo_movimentacao",
+  "compra/venda": "tipo_movimentacao",
+  "tipo ativo": "tipo_ativo",
+  classe: "tipo_ativo",
+  produto: "tipo_ativo",
+  ticker: "ticker",
+  codigo: "ticker",
+  ativo: "ticker",
+  "codigo ativo": "ticker",
+  nome: "nome_ativo",
+  "nome ativo": "nome_ativo",
+  "nome do ativo": "nome_ativo",
+  quantidade: "quantidade",
+  qtd: "quantidade",
+  preco: "preco_unitario",
+  "preco unitario": "preco_unitario",
+  "preco medio": "preco_unitario",
+  valor: "valor_total",
+  "valor total": "valor_total",
+  "valor bruto": "valor_total",
+  taxas: "taxas",
+  taxa: "taxas",
+  custos: "taxas",
+  emolumentos: "taxas",
+  observacao: "observacao",
+  observacoes: "observacao",
+  descricao: "observacao"
+};
+
+function normalizeHeader(value: string) {
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  return headerAliases[normalized] ?? normalized.replace(/\s/g, "_");
+}
+
+function detectDelimiter(headerLine: string) {
+  const candidates = [",", ";", "\t"];
+  return candidates
+    .map((delimiter) => ({
+      delimiter,
+      count: headerLine.split(delimiter).length
+    }))
+    .sort((a, b) => b.count - a.count)[0]?.delimiter ?? ",";
 }
 
 function parseCsv(content: string) {
@@ -59,10 +123,11 @@ function parseCsv(content: string) {
     };
   }
 
-  const headers = splitCsvLine(lines[0]).map((header) => header.toLowerCase());
+  const delimiter = detectDelimiter(lines[0]);
+  const headers = splitCsvLine(lines[0], delimiter).map(normalizeHeader);
   const missingColumns = requiredStandardColumns.filter((column) => !headers.includes(column));
   const rows = lines.slice(1).map((line) => {
-    const values = splitCsvLine(line);
+    const values = splitCsvLine(line, delimiter);
     return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""]));
   });
 

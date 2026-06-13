@@ -1,5 +1,7 @@
 import { NvidiaAiProvider } from "../providers/nvidia-ai-provider.js";
 import { buildInvestmentAnalysisPrompt } from "../prompts/investment-analysis-prompt.js";
+import { createHash } from "node:crypto";
+import { prisma } from "../../lib/prisma.js";
 import {
   investmentAnalysisSchema,
   type InvestmentAnalysis,
@@ -85,4 +87,68 @@ export async function analyzeInvestment(input: InvestmentAnalysisRequest, option
       analysis: buildFallbackAnalysis(inputWithIndexes)
     };
   }
+}
+
+function analysisInputHash(input: InvestmentAnalysisRequest) {
+  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
+}
+
+function cacheExpirationDate() {
+  const expiresAt = new Date();
+  expiresAt.setUTCHours(expiresAt.getUTCHours() + 12);
+  return expiresAt;
+}
+
+export async function analyzeInvestmentWithCache(userId: string, input: InvestmentAnalysisRequest) {
+  const inputHash = analysisInputHash(input);
+  const cached = await prisma.investmentAnalysisCache.findUnique({
+    where: {
+      userId_ticker_inputHash: {
+        userId,
+        ticker: input.ticker,
+        inputHash
+      }
+    }
+  });
+
+  if (cached && cached.expiresAt > new Date()) {
+    return {
+      source: cached.source as "nvidia" | "fallback",
+      cache: "hit" as const,
+      internalIndexes: cached.indexes,
+      analysis: cached.analysis
+    };
+  }
+
+  const result = await analyzeInvestment(input);
+
+  await prisma.investmentAnalysisCache.upsert({
+    where: {
+      userId_ticker_inputHash: {
+        userId,
+        ticker: input.ticker,
+        inputHash
+      }
+    },
+    create: {
+      userId,
+      ticker: input.ticker,
+      inputHash,
+      source: result.source,
+      indexes: result.internalIndexes,
+      analysis: result.analysis,
+      expiresAt: cacheExpirationDate()
+    },
+    update: {
+      source: result.source,
+      indexes: result.internalIndexes,
+      analysis: result.analysis,
+      expiresAt: cacheExpirationDate()
+    }
+  });
+
+  return {
+    ...result,
+    cache: "miss" as const
+  };
 }

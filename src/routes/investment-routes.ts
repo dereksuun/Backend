@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireUserContext } from "../http/user-context.js";
-import { analyzeInvestment } from "../ai/services/investment-intelligence-service.js";
+import { analyzeInvestmentWithCache } from "../ai/services/investment-intelligence-service.js";
 import { calculateInvestmentIndexes } from "../investments/calculators/investment-indexes.js";
 import { previewInvestmentImport, standardInvestmentCsvTemplate } from "../investments/importers/investment-import-service.js";
 import {
@@ -61,7 +61,7 @@ investmentRouter.post("/analyze-asset", async (request, response, next) => {
       return;
     }
 
-    const result = await analyzeInvestment(parsed.data);
+    const result = await analyzeInvestmentWithCache(request.userContext!.id, parsed.data);
     response.json(result);
   } catch (error) {
     next(error);
