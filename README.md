@@ -22,6 +22,8 @@ API e regras de negocio do Derycash, o app que calcula quanto dinheiro realmente
 - Resumo do dashboard
 - Simulador "Posso Gastar?"
 - Simulador educativo de investimentos
+- Investment Intelligence com IA em background
+- Previa de importacao de extratos de investimentos
 
 ## Endpoints
 
@@ -51,6 +53,10 @@ POST /api/goals/:goalId/contributions
 GET  /api/dashboard/summary
 POST /api/simulator/can-i-buy
 POST /api/investments/simulate
+GET  /api/investments/portfolio
+POST /api/investments/analyze-asset
+POST /api/investments/imports/preview
+POST /api/investments/imports/confirm
 ```
 
 ## Ambiente
@@ -62,7 +68,34 @@ DATABASE_URL=""
 PORT=3333
 FRONTEND_URL="http://localhost:3000"
 CRON_SECRET=""
+NVIDIA_API_KEY=""
+NVIDIA_BASE_URL="https://integrate.api.nvidia.com/v1"
+NVIDIA_MAIN_MODEL="nvidia/llama-3.3-nemotron-super-49b-v1.5"
+NVIDIA_FALLBACK_MODEL="nvidia/llama-3.3-nemotron-super-49b-v1"
+NVIDIA_LIGHT_MODEL="nvidia/nvidia-nemotron-nano-9b-v2"
 ```
+
+## IA e investimentos
+
+A IA fica no backend como camada auxiliar. Ela explica dados estruturados de investimentos, mas nao calcula metricas finais e nao deve recomendar compra ou venda. Sem `NVIDIA_API_KEY`, o endpoint usa fallback educativo para manter a interface funcionando.
+
+## Importacao de extratos
+
+O fluxo inicial de importacao gera uma previa revisavel. Nada e gravado automaticamente antes da confirmacao:
+
+```text
+upload/conteudo do arquivo -> parser -> previa -> revisao do usuario -> confirmacao -> movimentos/posicoes
+```
+
+O parser automatico atual suporta o CSV padrao Derycash. XLSX e PDF ja entram no contrato como formatos planejados, retornando necessidade de mapeamento manual ate os parsers especificos de B3, XP, Inter, Nubank e Itau evoluirem.
+
+Modelos persistidos:
+
+- plataformas de investimento;
+- ativos;
+- lotes de importacao;
+- movimentacoes;
+- posicoes consolidadas por ativo/plataforma.
 
 ## Banco local
 

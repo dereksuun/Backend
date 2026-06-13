@@ -22,38 +22,71 @@ enum CreditCardRisk {
   CHAOTIC
 }
 
+enum InvestmentInstitution {
+  B3
+  XP
+  INTER
+  NUBANK
+  ITAU
+  OTHER
+}
+
+enum InvestmentImportStatus {
+  PREVIEWED
+  CONFIRMED
+  NEEDS_REVIEW
+  REJECTED
+}
+
+enum InvestmentMovementType {
+  BUY
+  SELL
+  DIVIDEND
+  JCP
+  INCOME
+  POSITION
+  DEPOSIT
+  WITHDRAWAL
+  OTHER
+}
+
 model User {
-  id               String            @id @default(cuid())
-  name             String?
-  email            String?           @unique
-  image            String?
-  financialProfile FinancialProfile?
-  incomes          Income[]
-  expenses         RecurringExpense[]
-  creditCards      CreditCard[]
-  goals            Goal[]
-  transactions     Transaction[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                  String                  @id @default(cuid())
+  name                String?
+  email               String?                 @unique
+  image               String?
+  financialProfile    FinancialProfile?
+  incomes             Income[]
+  expenses            RecurringExpense[]
+  creditCards         CreditCard[]
+  goals               Goal[]
+  transactions        Transaction[]
+  investmentPlatforms InvestmentPlatform[]
+  investmentAssets    InvestmentAsset[]
+  investmentPositions InvestmentPosition[]
+  investmentMovements InvestmentMovement[]
+  investmentImports   InvestmentImportBatch[]
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
 }
 
 model FinancialProfile {
-  id                         String   @id @default(cuid())
-  userId                     String   @unique
-  monthlyIncomeCents         Int
-  mainPaymentDay             Int      @default(5)
-  advancePaymentDay          Int      @default(20)
-  mainPaymentPercent         Int      @default(60)
-  advancePaymentPercent      Int      @default(40)
-  includeMealVoucher         Boolean  @default(false)
-  includeTransportVoucher    Boolean  @default(false)
-  monthlySavingGoalCents     Int      @default(0)
-  safetyMarginCents          Int      @default(0)
-  cycleStartDay              Int      @default(1)
-  onboardingCompletedAt      DateTime?
-  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt                  DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  monthlyIncomeCents      Int
+  mainPaymentDay          Int       @default(5)
+  advancePaymentDay       Int       @default(20)
+  mainPaymentPercent      Int       @default(60)
+  advancePaymentPercent   Int       @default(40)
+  includeMealVoucher      Boolean   @default(false)
+  includeTransportVoucher Boolean   @default(false)
+  monthlySavingGoalCents  Int       @default(0)
+  safetyMarginCents       Int       @default(0)
+  cycleStartDay           Int       @default(1)
+  onboardingCompletedAt   DateTime?
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 }
 
 model Income {
@@ -108,19 +141,19 @@ model MonthlyExpense {
 }
 
 model CreditCard {
-  id              String               @id @default(cuid())
-  userId          String
-  name            String
-  institution     String?
-  limitCents      Int
-  closingDay      Int
-  dueDay          Int
-  color           String?
-  active          Boolean              @default(true)
-  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  purchases       CreditCardPurchase[]
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id          String               @id @default(cuid())
+  userId      String
+  name        String
+  institution String?
+  limitCents  Int
+  closingDay  Int
+  dueDay      Int
+  color       String?
+  active      Boolean              @default(true)
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchases   CreditCardPurchase[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   @@index([userId])
 }
@@ -190,14 +223,14 @@ model Goal {
 }
 
 model GoalContribution {
-  id          String   @id @default(cuid())
-  goalId      String
-  userId      String
-  amountCents Int
+  id            String   @id @default(cuid())
+  goalId        String
+  userId        String
+  amountCents   Int
   contributedAt DateTime
-  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  goal          Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([userId, contributedAt])
 }
@@ -211,4 +244,102 @@ model MarketIndicator {
   source      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model InvestmentPlatform {
+  id          String                  @id @default(cuid())
+  userId      String
+  institution InvestmentInstitution
+  name        String
+  active      Boolean                 @default(true)
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imports     InvestmentImportBatch[]
+  positions   InvestmentPosition[]
+  movements   InvestmentMovement[]
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@unique([userId, institution, name])
+  @@index([userId, institution])
+}
+
+model InvestmentAsset {
+  id        String               @id @default(cuid())
+  userId    String
+  ticker    String
+  name      String?
+  assetType String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positions InvestmentPosition[]
+  movements InvestmentMovement[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@unique([userId, ticker])
+  @@index([userId, assetType])
+}
+
+model InvestmentImportBatch {
+  id           String                 @id @default(cuid())
+  userId       String
+  platformId   String?
+  institution  InvestmentInstitution
+  fileType     String
+  status       InvestmentImportStatus @default(PREVIEWED)
+  sourceHash   String
+  summary      Json
+  issues       Json
+  importedRows Json
+  confirmedAt  DateTime?
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     InvestmentPlatform?    @relation(fields: [platformId], references: [id], onDelete: SetNull)
+  movements    InvestmentMovement[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([userId, sourceHash])
+  @@index([userId, createdAt])
+}
+
+model InvestmentMovement {
+  id             String                 @id @default(cuid())
+  userId         String
+  assetId        String?
+  platformId     String?
+  importBatchId  String?
+  movementType   InvestmentMovementType
+  assetType      String?
+  occurredAt     DateTime
+  quantity       Decimal?
+  unitPriceCents Int?
+  totalCents     Int
+  feesCents      Int                    @default(0)
+  notes          String?
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset          InvestmentAsset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  platform       InvestmentPlatform?    @relation(fields: [platformId], references: [id], onDelete: SetNull)
+  importBatch    InvestmentImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([userId, occurredAt])
+  @@index([userId, movementType])
+}
+
+model InvestmentPosition {
+  id                String             @id @default(cuid())
+  userId            String
+  assetId           String
+  platformId        String
+  quantity          Decimal
+  averagePriceCents Int                @default(0)
+  investedCents     Int                @default(0)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset             InvestmentAsset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  platform          InvestmentPlatform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([userId, assetId, platformId])
+  @@index([userId])
 }
