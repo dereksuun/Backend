@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import type { GoalContributionInput, GoalInput } from "../validations/goal.js";
+import type { GoalContributionInput, GoalInput, UpdateGoalInput } from "../validations/goal.js";
 
 export async function listGoals(userId: string) {
   return prisma.goal.findMany({
@@ -21,6 +21,30 @@ export async function createGoal(userId: string, input: GoalInput) {
     },
     include: {
       contributions: true
+    }
+  });
+}
+
+export async function updateGoal(userId: string, goalId: string, input: UpdateGoalInput) {
+  const result = await prisma.goal.updateMany({
+    where: {
+      id: goalId,
+      userId
+    },
+    data: input
+  });
+
+  if (result.count === 0) return null;
+
+  return prisma.goal.findFirst({
+    where: {
+      id: goalId,
+      userId
+    },
+    include: {
+      contributions: {
+        orderBy: { contributedAt: "desc" }
+      }
     }
   });
 }

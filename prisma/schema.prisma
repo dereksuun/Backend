@@ -138,6 +138,7 @@ model MonthlyExpense {
   updatedAt           DateTime         @updatedAt
 
   @@index([userId, referenceMonth])
+  @@unique([recurringExpenseId, userId, referenceMonth])
 }
 
 model CreditCard {

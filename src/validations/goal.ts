@@ -16,10 +16,13 @@ export const goalSchema = z.object({
   priority: z.coerce.number().int().min(0).max(5).default(0)
 });
 
+export const updateGoalSchema = goalSchema.partial();
+
 export const goalContributionSchema = z.object({
   amountCents: z.coerce.number().int().positive(),
   contributedAt: z.union([z.string().datetime(), z.string().date()]).transform((value) => new Date(value))
 });
 
 export type GoalInput = z.infer<typeof goalSchema>;
+export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
 export type GoalContributionInput = z.infer<typeof goalContributionSchema>;

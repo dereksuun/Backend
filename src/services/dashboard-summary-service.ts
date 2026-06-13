@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { classifyCreditCardRisk } from "../finance/risk.js";
+import { ensureMonthlyExpensesForUser } from "./recurring-expense-service.js";
 
 function startOfUtcMonth(date = new Date()) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
@@ -56,6 +57,7 @@ function getNextPayment(profile: {
 
 export async function getDashboardSummary(userId: string) {
   const referenceMonth = startOfUtcMonth();
+  await ensureMonthlyExpensesForUser(userId, referenceMonth);
   const profile = await prisma.financialProfile.findUnique({
     where: { userId }
   });

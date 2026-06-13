@@ -9,15 +9,93 @@ function startOfMonth(date = new Date()) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }
 
+function subtractUtcMonths(date: Date, months: number) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - months, 1));
+}
+
+function isRecurringExpenseActiveForMonth(expense: { startsAt: Date | null; endsAt: Date | null }, referenceMonth: Date) {
+  const nextMonth = new Date(Date.UTC(referenceMonth.getUTCFullYear(), referenceMonth.getUTCMonth() + 1, 1));
+
+  if (expense.startsAt && expense.startsAt >= nextMonth) return false;
+  if (expense.endsAt && expense.endsAt < referenceMonth) return false;
+  return true;
+}
+
+function statusForDueDay(dueDay: number, referenceMonth: Date, now = new Date()) {
+  const isCurrentMonth =
+    referenceMonth.getUTCFullYear() === now.getUTCFullYear() && referenceMonth.getUTCMonth() === now.getUTCMonth();
+
+  if (!isCurrentMonth) return "PENDING" as const;
+  return now.getUTCDate() > dueDay ? ("OVERDUE" as const) : ("PENDING" as const);
+}
+
+export async function ensureMonthlyExpensesForUser(userId: string, referenceDate = new Date()) {
+  const referenceMonth = startOfMonth(referenceDate);
+  const recurringExpenses = await prisma.recurringExpense.findMany({
+    where: {
+      userId,
+      status: {
+        not: "CANCELED"
+      }
+    }
+  });
+  const activeExpenses = recurringExpenses.filter((expense) => isRecurringExpenseActiveForMonth(expense, referenceMonth));
+
+  await Promise.all(
+    activeExpenses.map(async (expense) => {
+      const existing = await prisma.monthlyExpense.findUnique({
+        where: {
+          recurringExpenseId_userId_referenceMonth: {
+            recurringExpenseId: expense.id,
+            userId,
+            referenceMonth
+          }
+        }
+      });
+
+      if (existing?.status === "PAID") return existing;
+
+      if (existing) {
+        return prisma.monthlyExpense.update({
+          where: { id: existing.id },
+          data: {
+            expectedAmountCents: expense.expectedAmountCents,
+            status: statusForDueDay(expense.dueDay, referenceMonth)
+          }
+        });
+      }
+
+      return prisma.monthlyExpense.create({
+        data: {
+          recurringExpenseId: expense.id,
+          userId,
+          referenceMonth,
+          expectedAmountCents: expense.expectedAmountCents,
+          status: statusForDueDay(expense.dueDay, referenceMonth)
+        }
+      });
+    })
+  );
+
+  return activeExpenses.length;
+}
+
 export async function listRecurringExpenses(userId: string) {
   const referenceMonth = startOfMonth();
+  const historyStartMonth = subtractUtcMonths(referenceMonth, 5);
+  await ensureMonthlyExpensesForUser(userId, referenceMonth);
 
   return prisma.recurringExpense.findMany({
     where: { userId },
     include: {
       monthlyExpenses: {
-        where: { referenceMonth },
-        orderBy: { updatedAt: "desc" }
+        where: {
+          referenceMonth: {
+            gte: historyStartMonth,
+            lte: referenceMonth
+          }
+        },
+        orderBy: { referenceMonth: "desc" }
       }
     },
     orderBy: [{ dueDay: "asc" }, { name: "asc" }]
