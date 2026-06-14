@@ -191,14 +191,6 @@ Use o token nas rotas financeiras:
 Authorization: Bearer <token>
 ```
 
-Os headers antigos continuam como fallback para desenvolvimento:
-
-```text
-x-user-id
-x-user-email
-x-user-name
-```
-
 Toda query filtra por `userId`.
 
 ## Gestao de usuarios

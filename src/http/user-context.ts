@@ -71,23 +71,10 @@ export async function requireUserContext(request: Request, response: Response, n
     }
   }
 
-  const userId = request.header("x-user-id");
-
-  if (!userId) {
-    response.status(401).json({
-      error: "missing_user_context",
-      message: "Informe um Bearer token ou o header x-user-id para acessar dados financeiros."
-    });
-    return;
-  }
-
-  request.userContext = {
-    id: userId,
-    email: request.header("x-user-email") ?? undefined,
-    name: request.header("x-user-name") ?? undefined
-  };
-
-  next();
+  response.status(401).json({
+    error: "missing_token",
+    message: "Informe um Bearer token para acessar dados financeiros."
+  });
 }
 
 export async function requireAdminUser(request: Request, response: Response, next: NextFunction) {

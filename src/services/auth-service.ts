@@ -117,9 +117,15 @@ export function verifyAuthToken(token: string): JwtPayload {
     throw new AuthError("invalid_token", "Sessao invalida.");
   }
 
-  const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as JwtPayload;
+  let decoded: JwtPayload;
 
-  if (!decoded.sub || decoded.exp < Math.floor(Date.now() / 1000)) {
+  try {
+    decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as JwtPayload;
+  } catch {
+    throw new AuthError("invalid_token", "Sessao invalida.");
+  }
+
+  if (!decoded.sub || typeof decoded.exp !== "number" || decoded.exp < Math.floor(Date.now() / 1000)) {
     throw new AuthError("invalid_token", "Sessao expirada.");
   }
 
