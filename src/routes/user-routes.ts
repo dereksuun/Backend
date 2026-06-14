@@ -36,7 +36,7 @@ userRouter.get("/", async (_request, response, next) => {
 
 userRouter.get("/:userId", async (request, response, next) => {
   try {
-    response.json({ user: await getManagedUser(request.params.userId) });
+    response.json({ user: await getManagedUser(request.params.userId, request.userContext!) });
   } catch (error) {
     if (!handleUserError(error, response)) {
       next(error);
@@ -56,7 +56,7 @@ userRouter.post("/", async (request, response, next) => {
       return;
     }
 
-    response.status(201).json({ user: await createManagedUser(parsed.data) });
+    response.status(201).json({ user: await createManagedUser(parsed.data, request.userContext!.role) });
   } catch (error) {
     if (!handleUserError(error, response)) {
       next(error);
@@ -77,7 +77,7 @@ userRouter.put("/:userId", async (request, response, next) => {
     }
 
     response.json({
-      user: await updateManagedUser(request.userContext!.id, request.params.userId, parsed.data)
+      user: await updateManagedUser(request.userContext!, request.params.userId, parsed.data)
     });
   } catch (error) {
     if (!handleUserError(error, response)) {
@@ -89,7 +89,7 @@ userRouter.put("/:userId", async (request, response, next) => {
 userRouter.delete("/:userId", async (request, response, next) => {
   try {
     response.json({
-      user: await disableManagedUser(request.userContext!.id, request.params.userId)
+      user: await disableManagedUser(request.userContext!, request.params.userId)
     });
   } catch (error) {
     if (!handleUserError(error, response)) {

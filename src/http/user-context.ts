@@ -102,6 +102,12 @@ export async function requireAdminUser(request: Request, response: Response, nex
       return;
     }
 
+    request.userContext = {
+      ...request.userContext,
+      id: userId,
+      role: user.role
+    };
+
     next();
   } catch (error) {
     next(error);

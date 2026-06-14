@@ -197,6 +197,11 @@ Toda query filtra por `userId`.
 
 O primeiro cadastro feito por `POST /api/auth/register` vira `SUPERADMIN`. Depois disso, somente admin ou superadmin pode gerenciar usuarios:
 
+- `SUPERADMIN` cria e gerencia `SUPERADMIN`, `ADMIN` e `USER`.
+- `ADMIN` cria e gerencia apenas `USER`.
+- `USER` nao acessa `/api/users`.
+- Ninguem pode desativar a propria conta ou remover o proprio perfil admin.
+
 ```http
 GET /api/users
 
