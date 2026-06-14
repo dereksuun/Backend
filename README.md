@@ -29,6 +29,17 @@ API e regras de negocio do Derycash, o app que calcula quanto dinheiro realmente
 
 ```text
 GET  /api/health
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/google
+POST /api/auth/github
+POST /api/auth/change-password
+GET  /api/auth/me
+GET  /api/users
+GET  /api/users/:userId
+POST /api/users
+PUT  /api/users/:userId
+DEL  /api/users/:userId
 GET  /api/financial-profile
 PUT  /api/financial-profile
 GET  /api/recurring-expenses
@@ -69,6 +80,10 @@ Copie `.env.example` para `.env`.
 DATABASE_URL=""
 PORT=3333
 FRONTEND_URL="http://localhost:3000"
+AUTH_JWT_SECRET="troque-por-um-segredo-com-pelo-menos-32-caracteres"
+AUTH_JWT_EXPIRES_SECONDS="604800"
+USER_DEFAULT_PASSWORD="Mudar123"
+GOOGLE_CLIENT_ID=""
 CRON_SECRET=""
 NVIDIA_API_KEY=""
 NVIDIA_BASE_URL="https://integrate.api.nvidia.com/v1"
@@ -117,9 +132,66 @@ npm run typecheck
 npm run build
 ```
 
-## Autenticacao temporaria
+## Autenticacao
 
-Enquanto a sessao final entre frontend e backend nao e unificada, as rotas financeiras usam headers:
+O app possui conta propria com email e senha:
+
+```http
+POST /api/auth/register
+{
+  "name": "Dery",
+  "email": "dery@example.com",
+  "password": "minha-senha"
+}
+
+POST /api/auth/login
+{
+  "email": "dery@example.com",
+  "password": "minha-senha"
+}
+
+POST /api/auth/change-password
+Authorization: Bearer <token>
+{
+  "currentPassword": "Mudar123",
+  "newPassword": "minha-nova-senha"
+}
+```
+
+As duas rotas retornam:
+
+```json
+{
+  "token": "jwt",
+  "user": {
+    "id": "user-id",
+    "name": "Dery",
+    "email": "dery@example.com",
+    "image": null,
+    "role": "SUPERADMIN",
+    "disabledAt": null,
+    "mustChangePassword": false
+  }
+}
+```
+
+Login social:
+
+```http
+POST /api/auth/google
+{ "idToken": "google-id-token" }
+
+POST /api/auth/github
+{ "accessToken": "github-access-token-com-scope-user-email" }
+```
+
+Use o token nas rotas financeiras:
+
+```text
+Authorization: Bearer <token>
+```
+
+Os headers antigos continuam como fallback para desenvolvimento:
 
 ```text
 x-user-id
@@ -128,6 +200,36 @@ x-user-name
 ```
 
 Toda query filtra por `userId`.
+
+## Gestao de usuarios
+
+O primeiro cadastro feito por `POST /api/auth/register` vira `SUPERADMIN`. Depois disso, somente admin ou superadmin pode gerenciar usuarios:
+
+```http
+GET /api/users
+
+POST /api/users
+{
+  "name": "Outro usuario",
+  "email": "outro@example.com",
+  "role": "USER"
+}
+
+PUT /api/users/:userId
+{
+  "name": "Nome novo",
+  "email": "novo@example.com",
+  "password": "nova-senha",
+  "role": "ADMIN",
+  "disabled": false
+}
+
+DELETE /api/users/:userId
+```
+
+Se `password` nao for enviado no `POST /api/users`, o backend usa `USER_DEFAULT_PASSWORD` (`Mudar123` no `.env.example`) e marca `mustChangePassword: true`. Enquanto isso estiver ativo, o usuario so consegue continuar depois de chamar `POST /api/auth/change-password`.
+
+`DELETE /api/users/:userId` desativa a conta (`disabledAt`) em vez de apagar registros financeiros.
 
 ## Aviso financeiro
 

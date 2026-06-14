@@ -50,11 +50,27 @@ enum InvestmentMovementType {
   OTHER
 }
 
+enum AuthProvider {
+  GOOGLE
+  GITHUB
+}
+
+enum UserRole {
+  SUPERADMIN
+  ADMIN
+  USER
+}
+
 model User {
   id                  String                  @id @default(cuid())
   name                String?
   email               String?                 @unique
   image               String?
+  passwordHash        String?
+  role                UserRole                @default(USER)
+  disabledAt          DateTime?
+  mustChangePassword  Boolean                 @default(false)
+  authAccounts        AuthAccount[]
   financialProfile    FinancialProfile?
   incomes             Income[]
   expenses            RecurringExpense[]
@@ -69,6 +85,20 @@ model User {
   investmentAnalysisCaches InvestmentAnalysisCache[]
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
+}
+
+model AuthAccount {
+  id          String       @id @default(cuid())
+  userId      String
+  provider    AuthProvider
+  providerId  String
+  email       String?
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([provider, providerId])
+  @@index([userId])
 }
 
 model FinancialProfile {
