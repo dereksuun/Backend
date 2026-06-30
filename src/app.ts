@@ -14,6 +14,7 @@ import { incomeRouter } from "./routes/income-routes.js";
 import { investmentRouter } from "./routes/investment-routes.js";
 import { marketDataCronRouter, marketDataRouter } from "./routes/market-data-routes.js";
 import { recurringExpenseRouter } from "./routes/recurring-expense-routes.js";
+import { reportRouter } from "./routes/report-routes.js";
 import { simulatorRouter } from "./routes/simulator-routes.js";
 import { transactionRouter } from "./routes/transaction-routes.js";
 import { userRouter } from "./routes/user-routes.js";
@@ -51,6 +52,7 @@ export function createApp() {
   app.use("/api/simulator", simulatorRouter);
   app.use("/api/investments", investmentRouter);
   app.use("/api/market-data", marketDataRouter);
+  app.use("/api/reports", reportRouter);
   app.use("/api/cron", marketDataCronRouter);
   app.use("/api/incomes", incomeRouter);
 
