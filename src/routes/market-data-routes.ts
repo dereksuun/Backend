@@ -17,6 +17,18 @@ marketDataRouter.get("/", async (_request, response, next) => {
   }
 });
 
+marketDataRouter.post("/update", async (_request, response, next) => {
+  try {
+    const indicators = await updateMarketIndicators();
+    response.json({
+      updated: indicators.length,
+      indicators
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 marketDataCronRouter.post("/update-market-data", async (request, response, next) => {
   try {
     const token = request.header("authorization")?.replace(/^Bearer\s+/i, "");
