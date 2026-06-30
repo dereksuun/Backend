@@ -3,6 +3,7 @@ import { requireUserContext } from "../http/user-context.js";
 import { analyzeInvestmentWithCache } from "../ai/services/investment-intelligence-service.js";
 import { calculateInvestmentIndexes } from "../investments/calculators/investment-indexes.js";
 import { previewInvestmentImport, standardInvestmentCsvTemplate } from "../investments/importers/investment-import-service.js";
+import { getInvestmentMarketSnapshot } from "../investments/services/investment-market-snapshot-service.js";
 import {
   confirmInvestmentImport,
   createManualInvestmentMovement,
@@ -28,6 +29,22 @@ investmentRouter.get("/portfolio", async (request, response, next) => {
   try {
     const portfolio = await listInvestmentPortfolio(request.userContext!.id);
     response.json(portfolio);
+  } catch (error) {
+    next(error);
+  }
+});
+
+investmentRouter.get("/market-snapshot/:ticker", async (request, response, next) => {
+  try {
+    const ticker = String(request.params.ticker ?? "").trim();
+
+    if (ticker.length < 3 || ticker.length > 16) {
+      response.status(400).json({ error: "invalid_investment_ticker" });
+      return;
+    }
+
+    const snapshot = await getInvestmentMarketSnapshot(ticker);
+    response.json({ snapshot });
   } catch (error) {
     next(error);
   }

@@ -10,6 +10,7 @@ const envSchema = z.object({
   USER_DEFAULT_PASSWORD: z.string().min(8).default("Mudar123"),
   GOOGLE_CLIENT_ID: z.string().optional(),
   CRON_SECRET: z.string().optional(),
+  BRAPI_TOKEN: z.string().optional(),
   NVIDIA_API_KEY: z.string().optional(),
   NVIDIA_BASE_URL: z.string().url().default("https://integrate.api.nvidia.com/v1"),
   NVIDIA_MAIN_MODEL: z.string().default("nvidia/llama-3.3-nemotron-super-49b-v1.5"),
